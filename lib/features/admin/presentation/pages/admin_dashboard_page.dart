@@ -101,9 +101,10 @@ class AdminDashboardPage extends ConsumerWidget {
                               child: Card(
                                 child: InkWell(
                                   onTap: () {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('User management coming soon!')),
-                                    );
+                                    // ScaffoldMessenger.of(context).showSnackBar(
+                                    //   const SnackBar(content: Text('User management coming soon!')),
+                                    // );
+                                    context.go('/users');
                                   },
                                   child: const Padding(
                                     padding: EdgeInsets.all(16.0),

@@ -1,30 +1,36 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/entities/user_entity.dart';
 import '../../data/models/register_dto.dart';
 import '../../data/models/auth_credentials_dto.dart';
-import '../../../../core/config/env.dart';
+import '../../../../core/network/dio_client.dart';
 
-// Dio provider
-final dioProvider = Provider<Dio>((ref) {
-  return Dio(BaseOptions(
-    baseUrl: Env.apiBaseUrl,
-    connectTimeout: const Duration(seconds: 30),
-    receiveTimeout: const Duration(seconds: 30),
-  ));
+// Secure storage provider
+final secureStorageProvider = Provider<FlutterSecureStorage>((ref) {
+  return const FlutterSecureStorage();
 });
 
-// Auth repository provider
+// Dio provider using DioClient with interceptors
+final dioProvider = Provider<Dio>((ref) {
+  final secureStorage = ref.watch(secureStorageProvider);
+  return DioClient(secureStorage).build();
+});
+
+// Auth repository provider - now passing both required parameters
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return AuthRepositoryImpl(ref.watch(dioProvider));
+  final dio = ref.watch(dioProvider);
+  final secureStorage = ref.watch(secureStorageProvider);
+  return AuthRepositoryImpl(dio, secureStorage);
 });
 
 // Auth state provider
-final authStateProvider = StateNotifierProvider<AuthNotifier, AsyncValue<UserEntity?>>((ref) {
-  return AuthNotifier(ref.watch(authRepositoryProvider));
-});
+final authStateProvider =
+    StateNotifierProvider<AuthNotifier, AsyncValue<UserEntity?>>((ref) {
+      return AuthNotifier(ref.watch(authRepositoryProvider));
+    });
 
 class AuthNotifier extends StateNotifier<AsyncValue<UserEntity?>> {
   final AuthRepository _repo;
@@ -65,8 +71,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserEntity?>> {
   Future<void> logout() async {
     state = const AsyncValue.loading();
     try {
-      // You'll need to store refresh token somewhere to pass it here
-      await _repo.logout(''); // Empty string for now
+      await _repo.logout('');
       state = const AsyncValue.data(null);
     } catch (e) {
       state = const AsyncValue.data(null);

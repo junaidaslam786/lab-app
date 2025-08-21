@@ -1,16 +1,10 @@
-// class Env {
-//   static const String env = String.fromEnvironment('ENV', defaultValue: 'dev');
-//   static const String apiBaseUrl = String.fromEnvironment(
-//     'API_BASE_URL',
-//     defaultValue: 'http://127.0.0.1:3000',
-//   );
-// }
+
 
 class Env {
   static const String env = String.fromEnvironment('ENV', defaultValue: 'dev');
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:3000',
+    defaultValue: 'https://adminapi.labverse.org',
   );
   static const String? sentryDsn = String.fromEnvironment(
     'SENTRY_DSN',

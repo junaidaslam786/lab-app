@@ -22,7 +22,7 @@ class DioClient {
 
     dio.interceptors.addAll([
       LoggingInterceptor(enabled: Env.isDev),
-      AuthInterceptor(_secureStorage, dio),
+      AuthInterceptor(_secureStorage),
       RetryInterceptor(
         dio: dio,
         retries: 3,

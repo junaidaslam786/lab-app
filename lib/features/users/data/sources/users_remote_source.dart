@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../models/user_dto.dart';
 import '../models/create_user_dto.dart';
+import '../models/update_user_dto.dart';
 
 class UsersRemoteSource {
   UsersRemoteSource(this._dio);
@@ -51,6 +52,62 @@ class UsersRemoteSource {
       return UserDto.fromJson(data as Map<String, dynamic>);
     } catch (e) {
       print('Error creating user: $e');
+      rethrow;
+    }
+  }
+
+  /// GET /users/:id -> ServiceResponse<User>
+  Future<UserDto> findById(String id) async {
+    try {
+      print('Fetching user by ID: $id');
+      final res = await _dio.get('/users/$id');
+      print('User API response: ${res.data}');
+
+      // Handle different response structures
+      dynamic data;
+      if (res.data is Map<String, dynamic>) {
+        data = res.data['data'];
+      } else {
+        data = res.data;
+      }
+
+      return UserDto.fromJson(data as Map<String, dynamic>);
+    } catch (e) {
+      print('Error fetching user by ID: $e');
+      rethrow;
+    }
+  }
+
+  /// PATCH /users/:id -> ServiceResponse<User>
+  Future<UserDto> updateUser(String id, UpdateUserDto dto) async {
+    try {
+      print('Updating user $id: ${dto.toJson()}');
+      final res = await _dio.patch('/users/$id', data: dto.toJson());
+      print('Update user response: ${res.data}');
+
+      // Handle different response structures
+      dynamic data;
+      if (res.data is Map<String, dynamic>) {
+        data = res.data['data'];
+      } else {
+        data = res.data;
+      }
+
+      return UserDto.fromJson(data as Map<String, dynamic>);
+    } catch (e) {
+      print('Error updating user: $e');
+      rethrow;
+    }
+  }
+
+  /// DELETE /users/:id -> ServiceResponse<void>
+  Future<void> deleteUser(String id) async {
+    try {
+      print('Deleting user: $id');
+      await _dio.delete('/users/$id');
+      print('User deleted successfully');
+    } catch (e) {
+      print('Error deleting user: $e');
       rethrow;
     }
   }

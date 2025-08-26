@@ -9,6 +9,7 @@ import '../../features/auth/presentation/pages/splash_gate.dart';
 import '../../features/admin/presentation/pages/admin_dashboard_page.dart';
 import '../../features/users/presentation/pages/users_list_page.dart';
 import '../../features/users/presentation/pages/user_form_page.dart';
+import '../../features/users/presentation/pages/user_edit_page.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final auth = ref.watch(authStateProvider);
@@ -24,13 +25,19 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/register', builder: (_, __) => const RegisterPage()),
       GoRoute(path: '/admin', builder: (_, __) => const AdminDashboardPage()),
       GoRoute(
-      path: '/users',
-      builder: (context, state) => const UsersListPage(),
-    ),
-    GoRoute(
-      path: '/users/create',
-      builder: (context, state) => const UserFormPage(),
-    ),
+        path: '/users',
+        builder: (context, state) => const UsersListPage(),
+      ),
+      GoRoute(
+        path: '/users/create',
+        builder: (context, state) => const UserFormPage(),
+      ),
+      GoRoute(
+        path: '/users/:id/edit',
+        builder:
+            (context, state) =>
+                UserEditPage(userId: state.pathParameters['id']!),
+      ),
     ],
     redirect: (ctx, state) {
       final user = auth.valueOrNull;

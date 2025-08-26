@@ -10,6 +10,28 @@ class UsersListPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final usersAsync = ref.watch(usersListProvider);
 
+    // Listen to delete controller state changes
+    ref.listen<AsyncValue<void>>(deleteUserControllerProvider, (previous, next) {
+      next.whenOrNull(
+        data: (_) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('User deleted successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        },
+        error: (error, stackTrace) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error deleting user: ${error.toString()}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        },
+      );
+    });
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Users Management'),
@@ -84,7 +106,7 @@ class UsersListPage extends ConsumerWidget {
                             context.go('/users/${user.id}/edit');
                             break;
                           case 'delete':
-                            _showDeleteDialog(context, ref, user.id);
+                            _showDeleteDialog(context, ref, user.id, user.fullName ?? user.email);
                             break;
                         }
                       },
@@ -118,26 +140,34 @@ class UsersListPage extends ConsumerWidget {
     );
   }
 
-  void _showDeleteDialog(BuildContext context, WidgetRef ref, String userId) {
+   void _showDeleteDialog(BuildContext context, WidgetRef ref, String userId, String userName) {
+    final deleteController = ref.read(deleteUserControllerProvider);
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete User'),
-        content: const Text('Are you sure you want to delete this user?'),
+        content: Text('Are you sure you want to delete "$userName"? This action cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Cancel'),
           ),
           FilledButton(
-            onPressed: () {
+            onPressed: deleteController.isLoading ? null : () {
               Navigator.of(context).pop();
-              // TODO: Implement delete functionality
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Delete functionality not implemented yet')),
-              );
+              ref.read(deleteUserControllerProvider.notifier).delete(userId);
             },
-            child: const Text('Delete'),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            child: deleteController.isLoading 
+                ? const SizedBox(
+                    height: 16,
+                    width: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Delete'),
           ),
         ],
       ),

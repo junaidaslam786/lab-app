@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 
 import 'package:lab_app/features/users/data/models/create_user_dto.dart';
+import 'package:lab_app/features/users/data/models/update_user_dto.dart';
 import 'package:lab_app/features/users/data/models/user_dto.dart';
 import 'package:lab_app/features/users/data/sources/users_remote_source.dart';
 import 'package:lab_app/features/users/data/repositories/users_repository_impl.dart';
@@ -47,6 +48,17 @@ final usersListProvider = FutureProvider<List<UserDto>>((ref) async {
   }
 });
 
+
+// Get single user by ID
+final userByIdProvider = FutureProviderFamily<UserDto, String>((ref, id) async {
+  try {
+    return await ref.watch(usersRepositoryProvider).findById(id);
+  } catch (e) {
+    print('Error fetching user by ID: $e');
+    rethrow;
+  }
+});
+
 /// Create user controller (refreshes list on success)
 class CreateUserController extends StateNotifier<AsyncValue<UserDto?>> {
   CreateUserController(this._ref, this._repo)
@@ -72,4 +84,59 @@ class CreateUserController extends StateNotifier<AsyncValue<UserDto?>> {
 final createUserControllerProvider =
     StateNotifierProvider<CreateUserController, AsyncValue<UserDto?>>(
       (ref) => CreateUserController(ref, ref.watch(usersRepositoryProvider)),
+    );
+
+  /// Update user controller
+class UpdateUserController extends StateNotifier<AsyncValue<UserDto?>> {
+  UpdateUserController(this._ref, this._repo)
+      : super(const AsyncValue.data(null));
+
+  final Ref _ref;
+  final UsersRepository _repo;
+
+  Future<void> submit(String userId, UpdateUserDto dto) async {
+    state = const AsyncValue.loading();
+    try {
+      final updated = await _repo.updateUser(userId, dto);
+      // Refresh both the list and the individual user
+      _ref.invalidate(usersListProvider);
+      _ref.invalidate(userByIdProvider(userId));
+      state = AsyncValue.data(updated);
+    } catch (e, st) {
+      print('Error updating user: $e');
+      state = AsyncValue.error(e, st);
+    }
+  }
+}
+
+final updateUserControllerProvider =
+    StateNotifierProvider<UpdateUserController, AsyncValue<UserDto?>>(
+      (ref) => UpdateUserController(ref, ref.watch(usersRepositoryProvider)),
+    );
+
+/// Delete user controller
+class DeleteUserController extends StateNotifier<AsyncValue<void>> {
+  DeleteUserController(this._ref, this._repo)
+      : super(const AsyncValue.data(null));
+
+  final Ref _ref;
+  final UsersRepository _repo;
+
+  Future<void> delete(String userId) async {
+    state = const AsyncValue.loading();
+    try {
+      await _repo.deleteUser(userId);
+      // Refresh the list after deletion
+      _ref.invalidate(usersListProvider);
+      state = const AsyncValue.data(null);
+    } catch (e, st) {
+      print('Error deleting user: $e');
+      state = AsyncValue.error(e, st);
+    }
+  }
+}
+
+final deleteUserControllerProvider =
+    StateNotifierProvider<DeleteUserController, AsyncValue<void>>(
+      (ref) => DeleteUserController(ref, ref.watch(usersRepositoryProvider)),
     );
